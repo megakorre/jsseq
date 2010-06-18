@@ -13,7 +13,9 @@ function each(col, f) {
 }
 
 function seq(item) {
+	if(item._seq_) return item;
 	var res = {
+		_seq_: true,
 		first: item.first,
 		rest: item.rest,
 		each: function(f) {
@@ -30,6 +32,9 @@ function seq(item) {
 		},
 		fold: function(s, f) {
 		  return fold(item, s, f);
+		},
+		sum: function() {
+		  return sum(item);
 		}
 	};
 	for(i in seq_fns) {
@@ -88,6 +93,7 @@ function lazy(f) {
 		first: function() {
 		  if(item == null) 
 			  item = f();
+			if(item == null) return null;
 		 	return item.first();
 		},
 		rest: function() {
@@ -113,6 +119,22 @@ function fold(col, s, f) {
 	return s;
 }
 
+function seq_eq(col1, col2) {
+	while(true) {
+		var f1 = col1.first();
+		var f2 = col2.first();
+		if(f1 == f2) {
+			if(f1 == null) return true;
+			else {
+				col1 = col1.rest();
+				col2 = col2.rest();
+			}
+		} else {
+			return false;
+		}
+	}
+}
+
 function map(col, f) {
 	return lazy(function() {
 	  var x = col.first();
@@ -120,6 +142,12 @@ function map(col, f) {
 		else {
 			return seq(cons(f(x), map(col.rest(), f)));
 		}
+	});
+}
+
+function sum(col) {
+	return seq(col).reduce(function(c,p) {
+	  return c + p;
 	});
 }
 

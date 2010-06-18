@@ -1,0 +1,33 @@
+A Seq libary for javascript
+
+This libary dosen't use the window object so it can be 
+used in google app's scripting
+
+Example:
+
+var list = seq.from_list([1,2,3,4,5])
+	.select(function(v) { return v + 1; })
+	.where(function(v) { return (v % 2) != 0; });
+	
+list.each(function(v) {
+   document.write(v);
+});
+
+Functions
+
+STATICS
+
+seq.from_list: gives you a seq from a list
+seq.from_hash: 
+	gives you a seq of anny object by enumerating its fields
+	in the structure { key: value: }
+	
+METHODS:
+
+where:
+ takes a function as a predicatet and returns a seq with all
+ the items filtered by the predicate
+
+select:
+ takes a function and applies it to all the items in the
+ seq
