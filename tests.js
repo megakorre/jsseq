@@ -1,6 +1,8 @@
+
 var tests_runned = 0;
 var tests_passed = 0;
 var tests_failed = 0;
+
 function assert(msg, cond) {
 	tests_runned++;
 	var res = false;
@@ -103,6 +105,36 @@ function run_tests() {
 			.bind(function(v) {
 			  return seq.from_range(v);
 			});
+		return li.count() == 10;
+	});
+	
+	assert("can fold a list", function() {
+	  var li = seq.from_range(5)
+		  .fold(4, function(p,c) {
+		  	return p + c;
+			});
+		return li == 14;
+	});
+	
+	assert("can use easy generator function", function() {
+	  var li = seq.gen(function(y) {
+	    for (var i=0; i < 10; i++) {
+	    	y(i);
+	    }
+	  });
+		return li.count() == 10;
+	});
+	
+	assert("can use seq.from_callback", function() {
+	  var x = 0;
+		var li = seq.from_callback(function() {
+		  if(x < 10) {
+				x++;
+				return (x - 1);
+			} else {
+				return null;
+			}
+		});
 		return li.count() == 10;
 	});
 	

@@ -54,6 +54,13 @@ function seq(item) {
 		},
 		bind: function(f) {
 		  return bind(item, f);
+		},
+		toString: function() {
+		  var res = "(";
+			this.each(function(v) {
+			  res += " " + v + " ";
+			});
+			return res + ")";
 		}
 	};
 	for(i in seq_fns) {
@@ -127,6 +134,7 @@ function cons(item, col) {
 	}
 }
 
+
 function lazy(f) {
 	var item = null;
 	return {
@@ -153,7 +161,7 @@ function reduce(col, f) {
 }
 
 function fold(col, s, f) {
-	col.each(function(v) {
+	seq(col).each(function(v) {
 	  s = f(s, v);
 	})
 	return s;
@@ -185,6 +193,43 @@ function concat(col1, col2) {
 		}
 	}));
 }
+
+function callback_seq(callback) {
+	var start = "___________start__________"
+	var item = start;
+	return seq({
+		first: function() {
+		  if(item == start)
+				item = callback();
+			if(item == null)
+			  return null;
+			else {
+				return item;
+			}
+		},
+		rest: function() {
+		   if(item == start)
+					item = callback();
+			 return callback_seq(callback);
+		}
+	});
+}
+
+seq.from_callback = function(callback) {
+  return callback_seq(callback);
+};
+
+seq.gen = function(f) {
+	return seq(lazy(function() {
+	  var catches = [];
+	  
+		var x = f(function(v) {
+		  catches.push(v);
+		});
+		
+		return seq.from_list(catches); 
+	}));
+};
 
 function map(col, f) {
 	return lazy(function() {
