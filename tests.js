@@ -14,7 +14,7 @@ function assert(msg, cond) {
 		document.write("ERROR : " + msg + "<br />");
 		document.write(cond.toString().replace(";", "; <br />"));
 		document.write("<br />==================================<br />");
-		test_failed++;
+		tests_failed++;
 	} else {
 		tests_passed++;
 	}
@@ -60,9 +60,50 @@ function run_tests() {
 	});
 	
 	assert("test seq_eq can handle seq's of diferent length", function() {
-	  	var l1 = seq.from_list([1,2,3,5,6,7,8,9]);
-			var l2 = seq.from_list([1,2,3,4]);
-			return !seq_eq(l1,l2);
+	  var l1 = seq.from_list([1,2,3,5,6,7,8,9]);
+		var l2 = seq.from_list([1,2,3,4]);
+		return !seq_eq(l1,l2);
+	});
+	
+	assert("can concatt two seq's", function() {
+	  var l1 = seq.from_list([1,2]);
+		var l2 = seq.from_list([1,2]);
+		return concat(l1, l2).eq(seq.from_list([1,2,1,2]));
+	});
+	
+	assert("can convert to list", function() {
+	  var li = seq.from_list([1,2]);
+		// lists cant do == for some reson
+		return seq.from_list(li.to_list()).eq(seq.from_list([1,2]));
+	});
+	
+	assert("can flatten list", function() {
+	  var li = seq.from_list([
+			seq.from_list([1, 2, 3]),
+			seq.from_list([4, 5, 6])
+		]);
+		return li.flatten().eq(seq.from_list([1,2,3,4,5,6]));
+	});
+
+	assert("can get list from range", function() {
+	  var li = seq.from_range(0,5);
+		var li2 = seq.from_range(5);
+		var li3 = seq.from_range(0,1,5);
+		
+		return li.eq(li2) && li.eq(li3);
+	});
+	
+	assert("can count", function() {
+	  var li = seq.from_range(20);
+		return li.count() == 20;
+	});
+	
+	assert("can bind", function() {
+	  var li = seq.from_range(5)
+			.bind(function(v) {
+			  return seq.from_range(v);
+			});
+		return li.count() == 10;
 	});
 	
 	document.write("<h1>Ran Tests</h1>");

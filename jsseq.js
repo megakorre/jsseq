@@ -6,13 +6,14 @@ function each(col, f) {
 		var x = col.first();
 		if(x == null) break;
 		else  {
-			if(f(x) == each_brake) return;
+			if(f(x) == seq.each_brake) return;
 			col = col.rest();
 		}
 	}
 }
 
 function seq(item) {
+	if(item == null) return null;
 	if(item._seq_) return item;
 	var res = {
 		_seq_: true,
@@ -35,6 +36,24 @@ function seq(item) {
 		},
 		sum: function() {
 		  return sum(item);
+		},
+		eq: function(col) {
+		  return seq_eq(item, col);
+		},
+		concat: function(col) {
+		  return concat(item, col);
+		},
+		to_list: function() {
+		  return to_list(item);
+		},
+		flatten: function() {
+		  return flatten(item);
+		},
+		count: function() {
+		  return count(item);
+		},
+		bind: function(f) {
+		  return bind(item, f);
 		}
 	};
 	for(i in seq_fns) {
@@ -72,9 +91,30 @@ seq.from_list = function(col) {
 	return seq(list_seq(col, 0));
 }
 
+seq.from_range = function(start, step, end) {
+	if(step == undefined && end == undefined) {
+		end = start;
+		start = 0;
+		step = 1;
+	} else {
+		if(end == undefined) {
+			end = step;
+			step = 1;
+		} 
+	}
+	var li = [];
+	while(start < end) {
+		li.push(start);
+		start = start + step;
+	}
+	return seq.from_list(li);
+}
+
 seq.from_hash = function(hash) {
   return seq(hash_seq(hash));
 }
+
+seq.each_brake = "______each___brake____";
 
 function cons(item, col) {
 	return {
@@ -135,6 +175,17 @@ function seq_eq(col1, col2) {
 	}
 }
 
+function concat(col1, col2) {
+	return seq(lazy(function() {
+	  var x = col1.first();
+		if(x == null) {
+			return col2;
+		} else {
+			return seq(cons(x, concat(col1.rest(), col2)));
+		}
+	}));
+}
+
 function map(col, f) {
 	return lazy(function() {
 	  var x = col.first();
@@ -164,7 +215,47 @@ function filter(col, f) {
 	});
 }
 
+function flatten(col) {
+	return seq(lazy(function() {
+	  var x = col.first();
+		if(x == null) return null;
+		return seq(x).concat(flatten(col.rest()));
+	}));
+}
 
+function count(col) {
+	var i = 0;
+	seq(col).each(function() {
+	  i++;
+	});
+	return i;
+}
+
+function bind(col, f) {
+	return seq(lazy(function() {
+	  var x = col.first();
+		if(x == null) return null;
+		else {
+			return f(x).concat(
+				bind(col.rest(), f));
+		}
+	}));
+}
+
+function fac(n) {
+	if(n == 0) return 1;
+	else {
+		return n * fac(n - 1);
+	}
+}
+
+function to_list(col) {
+	var li = [];
+	seq(col).each(function(v) {
+	  li.push(v);
+	});
+	return li;
+}
 
 
 
