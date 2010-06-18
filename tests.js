@@ -87,6 +87,13 @@ function run_tests() {
 		return li.flatten().eq(seq.from_list([1,2,3,4,5,6]));
 	});
 
+	assert("can use where_index", function() {
+	  var li = seq.from_list([{ t: 2, b: 3 },{ t: 2, b: 3 },{ t: 2, b: 3 },{ t: 1, b: 3 }]);
+		return li.where_index("t", function(v) {
+		  return v == 2;
+		}).count() == 3;
+	});
+
 	assert("can get list from range", function() {
 	  var li = seq.from_range(0,5);
 		var li2 = seq.from_range(5);
@@ -136,6 +143,29 @@ function run_tests() {
 			}
 		});
 		return li.count() == 10;
+	});
+	
+	assert("can reverse seq", function() {
+	  var li = seq.from_list([1,2,3]);
+		return li.reverse().eq(seq.from_list([3,2,1]));
+	});
+	
+	assert("can order-by some field", function() {
+	  var li = seq.from_hash({ a: 2 , b: 4, c: 1 })
+			.order_by("value")
+			.select(function(v) {
+			  return v.key;
+			});
+		return li.eq(seq.from_list(["c","a","b"]));
+	});
+	
+	
+	assert("can scan list", function() {
+	  var li = seq.from_list([1,2,3,4,5])
+							.scan(0, function(p, c) {
+							  	return p + c;
+							});
+		return li.eq(seq.from_list([1,3,6,10,15]));
 	});
 	
 	document.write("<h1>Ran Tests</h1>");

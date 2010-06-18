@@ -55,6 +55,18 @@ function seq(item) {
 		bind: function(f) {
 		  return bind(item, f);
 		},
+		where_index: function(ind, f) {
+		  return filter_index(item, ind, f);
+		},
+		order_by: function(ind) {
+		  return order_by(item, ind);
+		},
+		reverse: function() {
+		  return reverse(item);
+		},
+		scan: function(s, f) {
+		  return scan(item, s, f);
+		},
 		toString: function() {
 		  var res = "(";
 			this.each(function(v) {
@@ -71,16 +83,16 @@ function seq(item) {
 
 function list_seq(col, index) {
 	index = index || 0;
-	return {
+	return seq({
 		first: function() {
 			if(!(index < col.length)) 
 				return null;
 		  return col[index];
 		},
 		rest: function() {
-		  return seq(list_seq(col, index + 1));
+		  return list_seq(col, index + 1);
 		}
-	};
+	});
 }
 
 function hash_seq(hash) {
@@ -95,7 +107,7 @@ function hash_seq(hash) {
 }
 
 seq.from_list = function(col) {
-	return seq(list_seq(col, 0));
+	return list_seq(col, 0);
 }
 
 seq.from_range = function(start, step, end) {
@@ -110,7 +122,7 @@ seq.from_range = function(start, step, end) {
 		} 
 	}
 	var li = [];
-	while(start < end) {
+	while(start != end) {
 		li.push(start);
 		start = start + step;
 	}
@@ -231,6 +243,19 @@ seq.gen = function(f) {
 	}));
 };
 
+function filter_index(col, ind, f) {
+	return seq(lazy(function() {
+	  var x = col.first();
+		if(x == null) return null;
+		while(!f(x[ind])) {
+			col = col.rest();
+			x = col.first();
+			if(x == null) return null;
+		}
+		return seq(cons(x, filter_index(col.rest(), ind, f)));
+	}));
+}
+
 function map(col, f) {
 	return lazy(function() {
 	  var x = col.first();
@@ -276,13 +301,50 @@ function count(col) {
 	return i;
 }
 
+function reverse(col) {
+	return seq(lazy(function() {
+	  var li = seq(col).to_list();
+		return seq.from_list(li.reverse());
+	}));
+}
+
+function order_by(col, index) {
+	return seq(lazy(function() {
+	  var item = col.first();
+		if(item == null) 
+			return null;
+		var smaller = col.rest().where(function(v) {
+		  							  return v[index] <= item[index];
+									});
+		var larger = 	col.rest().where(function(v) {
+									  return v[index] > item[index];
+									});
+		
+		return concat(
+			order_by(smaller, index),
+			cons(item, order_by(larger,index)));
+	}));
+}
+
 function bind(col, f) {
 	return seq(lazy(function() {
 	  var x = col.first();
-		if(x == null) return null;
+		if(x == null)
+			return null;
+		else return f(x).concat(
+						bind(col.rest(), f));		
+	}));
+}
+
+function scan(lis, s, f) {
+	return seq(lazy(function() {
+	  var x = lis.first();
+		if(x == null) 
+			return null;
 		else {
-			return f(x).concat(
-				bind(col.rest(), f));
+			var inter = f(s, x);
+			return seq(cons(inter, 
+				scan(lis.rest(), inter , f)));
 		}
 	}));
 }
