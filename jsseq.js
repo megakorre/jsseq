@@ -242,13 +242,6 @@ function bind(col, f) {
 	}));
 }
 
-function fac(n) {
-	if(n == 0) return 1;
-	else {
-		return n * fac(n - 1);
-	}
-}
-
 function to_list(col) {
 	var li = [];
 	seq(col).each(function(v) {
