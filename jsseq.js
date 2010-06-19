@@ -1,364 +1,443 @@
-var each_brake = "____list_break____";
-var seq_fns = {};
-
-function each(col, f) {
-	while(true) {
-		var x = col.first();
-		if(x == null) break;
-		else  {
-			if(f(x) == seq.each_brake) return;
-			col = col.rest();
+var seq = null;
+(function() {
+	var fns = {};
+	var dispatches = {};
+  
+	seq = function(item) {
+    if(item.__seq__) {
+			return item;
 		}
-	}
-}
+		if(item.constructor !== undefined && item.first === undefined) {
+			return seq(dispatches[item.constructor](item));
+		}
+		var res = {
+			__seq__: true,
+			first: item.first,
+			rest: item.rest
+		};
+		for(name in fns) {
+			res[name] = fns[name];
+		}
+		return res;
+  };
+	
+	seq.each_break = "____each_breake_____";
 
-function seq(item) {
-	if(item == null) return null;
-	if(item._seq_) return item;
-	var res = {
-		_seq_: true,
-		first: item.first,
-		rest: item.rest,
+	/* adds a test to use in seq.eq 
+	   to check if two arrays are equal */
+	function Array_eq(a1, a2) {
+		for(var i = 0; i < a1.length; i++) {
+			if(i >= a2.length) {
+				return false;
+			}
+			if(a1[i] == a2[i]) {
+				continue;
+			}
+			else {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	seq.cons = function(item, col) {
+		return seq({
+			first: function() {
+			  return item;
+			},
+			rest: function() {
+			  return col;
+			}
+		});
+	};
+
+	seq.add_methods = function(methods) {
+	  for(name in methods) {
+			fns[name] = methods[name];
+		}
+	};
+	
+	seq.add_dispatch = function(dispatcher, f) {
+	  dispatches[dispatcher] = f;
+	};
+	
+	seq.add_methods({
+		
 		each: function(f) {
-		  each(item, f);
+			var col = this;
+		  while(true) {
+				var x = col.first();
+				if(x === null) {
+					break;
+				}
+				if(f(x) == seq.each_break) {
+					return;
+				}
+				col = col.rest();
+			}
 		},
-		select: function(f) {
-		  return seq(map(item, f));
-		},
-		where: function(f) {
-		  return seq(filter(item, f));
-		},
+		
 		reduce: function(f) {
-		  return reduce(item, f);
-		},
-		fold: function(s, f) {
-		  return fold(item, s, f);
-		},
-		sum: function() {
-		  return sum(item);
-		},
-		eq: function(col) {
-		  return seq_eq(item, col);
-		},
-		concat: function(col) {
-		  return concat(item, col);
-		},
-		to_list: function() {
-		  return to_list(item);
-		},
-		flatten: function() {
-		  return flatten(item);
-		},
-		count: function() {
-		  return count(item);
-		},
-		bind: function(f) {
-		  return bind(item, f);
-		},
-		where_index: function(ind, f) {
-		  return filter_index(item, ind, f);
-		},
-		order_by: function(ind) {
-		  return order_by(item, ind);
-		},
-		reverse: function() {
-		  return reverse(item);
-		},
-		scan: function(s, f) {
-		  return scan(item, s, f);
-		},
-		toString: function() {
-		  var res = "(";
-			this.each(function(v) {
-			  res += " " + v + " ";
-			});
-			return res + ")";
-		}
-	};
-	for(i in seq_fns) {
-		res[i] = seq_fns[i];
-	}
-	return res;
-}
-
-function list_seq(col, index) {
-	index = index || 0;
-	return seq({
-		first: function() {
-			if(!(index < col.length)) 
+			var sed = this.first();
+			if(sed === null) {
 				return null;
-		  return col[index];
+			}
+			this.rest().each(function(v) {
+			  sed = f(sed, v);
+			});
+			return sed;
 		},
-		rest: function() {
-		  return list_seq(col, index + 1);
+		
+		fold: function(s,f) {
+			this.each(function(v) {
+			  s = f(s, v);
+			});
+			return s;
+		},
+		
+		eq: function(col2) {
+			var col1 = this;
+			while(true) {
+				var f1 = col1.first();
+				var f2 = col2.first();
+				if(f1 == f2) {
+					if(f1 === null) {
+						return true;
+					}
+					else {
+						col1 = col1.rest();
+						col2 = col2.rest();
+					}
+				} else {
+					return false;
+				}
+			}
+		},
+		
+		concat: function(col2) {
+			var col1 = this;
+		  return seq.lazy(function() {
+			  var x = col1.first();
+				if(x === null) {
+					return col2;
+				} else {
+					return seq.cons(x, col1.rest().concat(col2));
+				}
+			});
+		},
+		
+		where_index: function(ind,f) {
+			var col = this;
+		  return seq.lazy(function() {
+			  var x = col.first();
+				if(x === null) {
+					return null;
+				}
+				while(!f(x[ind])) {
+					col = col.rest();
+					x = col.first();
+					if(x === null) {
+						return null;
+					}
+				}
+				return seq.cons(x, col.rest().where_index(ind, f));
+			});
+		},
+		
+		select: function(f) {
+			var col = this;
+		  return seq.lazy(function() {
+			  var x = col.first();
+				if(x === null) {
+					return null;	
+				}
+				return seq.cons(f(x), col.rest().select(f));
+			});
+		},
+		
+		sum: function() {
+			var res = 0;
+		  this.each(function(v) {
+			  res += v;
+			});
+			return res;
+		},
+		
+		where: function(f) {
+			var col = this;
+		  return seq.lazy(function() {
+			  var x = col.first();
+				if(x === null) {
+					return null;
+				}
+				while(!f(x)) {
+					col = col.rest();
+					x = col.first();
+					if(x === null) {
+						return null;
+					}
+				}
+				return seq.cons(x, col.rest().where(f));
+			});
+		},
+		
+		flatten: function() {
+			var col = this;
+		  return seq.lazy(function() {
+			  var x = col.first();
+				if(x === null) {
+					return null;
+				}
+				return seq(x).concat(col.rest().flatten());
+			});
+		},
+		
+		count: function() {
+		  var i = 0;
+			this.each(function() {
+			  i++;
+			});
+			return i;
+		},
+		
+		reverse: function() {
+			var col = this;
+		  return seq.lazy(function() {
+			  var li = seq(col).to_list();
+				return seq.from_list(li.reverse());
+			});
+		},
+		
+		order_by: function(index) {
+			var col = this;
+		  return seq.lazy(function() {
+			  var item = col.first();
+				if(item === null) {
+					return null;
+				}
+				var smaller = 
+					col.rest().where(function(v) {
+				    return v[index] <= item[index];
+					});
+				var larger = 	
+					col.rest().where(function(v) {
+					  return v[index] > item[index];
+					});
+				return smaller.order_by(index).concat(seq.cons(item, larger.order_by(index)));
+			});
+		},
+		
+		bind: function(f) {
+			var col = this;
+		  return seq.lazy(function() {
+			  var x = col.first();
+				if(x === null) {
+					return null;
+				}
+				else {
+					return f(x).concat(col.rest().bind(f));
+				} 		
+			});
+		},
+		
+		scan: function(s,f) {
+			var lis = this;
+		  return seq.lazy(function() {
+			  var x = lis.first();
+				if(x === null) {
+					return null;
+				}
+				var inter = f(s, x);
+				return seq.cons(inter, lis.rest().scan(inter , f));
+			});
+		},
+		
+		to_list: function() {
+		  var li = [];
+			this.each(function(v) {
+			  li.push(v);
+			});
+			return li;
+		},
+		
+		cons: function(item) {
+		  return seq.cons(item, this);
 		}
+		
 	});
-}
-
-function hash_seq(hash) {
-	var res = [];
-	for (i in hash) {
-		res.push({
-			key: i,
-			value: hash[i]
+	
+	var list_seq = function(col, index) {
+		index = index || 0;
+		return seq({
+			first: function() {
+				if(index >= col.length) {
+					return null;
+				}
+				return col[index];
+			},
+			rest: function() {
+			  return list_seq(col, index + 1);
+			}
 		});
-	}
-	return seq.from_list(res);
-}
-
-seq.from_list = function(col) {
-	return list_seq(col, 0);
-}
-
-seq.from_range = function(start, step, end) {
-	if(step == undefined && end == undefined) {
-		end = start;
-		start = 0;
-		step = 1;
-	} else {
-		if(end == undefined) {
-			end = step;
-			step = 1;
-		} 
-	}
-	var li = [];
-	while(start != end) {
-		li.push(start);
-		start = start + step;
-	}
-	return seq.from_list(li);
-}
-
-seq.from_hash = function(hash) {
-  return seq(hash_seq(hash));
-}
-
-seq.each_brake = "______each___brake____";
-
-function cons(item, col) {
-	return {
-		first: function() {
-		  return item;
-		},
-		rest: function() {
-		  return col;
-		}
-	}
-}
-
-
-function lazy(f) {
-	var item = null;
-	return {
-		first: function() {
-		  if(item == null) 
-			  item = f();
-			if(item == null) return null;
-		 	return item.first();
-		},
-		rest: function() {
-		  if(item == null) item = f();
-			return seq(item.rest());
-		}
 	};
-}
-
-function reduce(col, f) {
-	var sed = col.first();
-	if(sed == null) return null;
-	col.rest().each(function(v) {
-	  sed = f(sed, v);
+	
+	/**
+	
+	*/
+	seq.from_list = function(col) {
+		return list_seq(col);
+	};
+	
+	seq.add_dispatch(Array, function(li) {
+	  return seq.from_list(li);
 	});
-	return sed;
-}
-
-function fold(col, s, f) {
-	seq(col).each(function(v) {
-	  s = f(s, v);
-	})
-	return s;
-}
-
-function seq_eq(col1, col2) {
-	while(true) {
-		var f1 = col1.first();
-		var f2 = col2.first();
-		if(f1 == f2) {
-			if(f1 == null) return true;
-			else {
-				col1 = col1.rest();
-				col2 = col2.rest();
-			}
+	
+	/**
+	*
+	*****/
+	seq.from_range = function(start, step, end) {
+		if(step === undefined && end === undefined) {
+			end = start;
+			start = 0;
+			step = 1;
 		} else {
-			return false;
+			if(end === undefined) {
+				end = step;
+				step = 1;
+			} 
 		}
+		var li = [];
+		while(start != end) {
+			li.push(start);
+			start = start + step;
+		}
+		return seq.from_list(li);
+	};
+	
+	function hash_seq(hash) {
+		var res = [];
+		for (i in hash) {
+			res.push({
+				key: i,
+				value: hash[i]
+			});
+		}
+		return seq.from_list(res);
 	}
-}
-
-function concat(col1, col2) {
-	return seq(lazy(function() {
-	  var x = col1.first();
-		if(x == null) {
-			return col2;
-		} else {
-			return seq(cons(x, concat(col1.rest(), col2)));
-		}
-	}));
-}
-
-function callback_seq(callback) {
-	var start = "___________start__________"
-	var item = start;
-	return seq({
-		first: function() {
-		  if(item == start)
-				item = callback();
-			if(item == null)
-			  return null;
-			else {
-				return item;
+	
+	seq.from_hash = function(hash) {
+	  return seq(hash_seq(hash));
+	};
+	
+	seq.lazy = function(f) {
+		var start = "___start___";
+		var item = start;
+		return seq({
+			first: function() {
+			  if(item == start) {
+				  item = f();
+				}
+				if(item === null) {
+					return null;
+				}
+			 	return item.first();
+			},
+			rest: function() {
+			  if(item == start) {
+					item = f();
+				}
+				return item.rest();
 			}
-		},
-		rest: function() {
-		   if(item == start)
-					item = callback();
-			 return callback_seq(callback);
-		}
-	});
-}
-
-seq.from_callback = function(callback) {
-  return callback_seq(callback);
-};
-
-seq.gen = function(f) {
-	return seq(lazy(function() {
-	  var catches = [];
-	  
-		var x = f(function(v) {
-		  catches.push(v);
 		});
+	};
+	
+	function callback_seq(callback) {
+		var start = "___________start__________";
+		var item = start;
+		return seq({
+			first: function() {
+			  if(item == start) {
+					item = callback();
+				}
+				if(item === null) {
+				  return null;	
+				}
+				else {
+					return item;
+				}
+			},
+			rest: function() {
+			   if(item == start)
+						item = callback();
+				 return callback_seq(callback);
+			}
+		});
+	}
+	
+	seq.from_callback = function(callback) {
+	  return callback_seq(callback);
+	};
+	
+	seq.gen = function(f) {
+		return seq.lazy(function() {
+		  var catches = [];
+			var x = f(function(v) {
+			  catches.push(v);
+			});
+			return seq.from_list(catches); 
+		});
+	};
+	
+	seq.empty = function() {
+	  return seq({
+			first: function() {
+			  return null;
+			},
+			rest: function() {
+			  return seq.empty();
+			}
+		});
+	};
+	
+	/** convinience functions */
+	
+	seq.add_methods({
+		nth: function(n) {
+		  if(n == 0) return this.first();
+		  var col = this;
+			var i = 0;
+			while(i != n) {
+				col = col.rest();
+				i++;
+			}
+			return col.first();
+		},
 		
-		return seq.from_list(catches); 
-	}));
-};
-
-function filter_index(col, ind, f) {
-	return seq(lazy(function() {
-	  var x = col.first();
-		if(x == null) return null;
-		while(!f(x[ind])) {
-			col = col.rest();
-			x = col.first();
-			if(x == null) return null;
-		}
-		return seq(cons(x, filter_index(col.rest(), ind, f)));
-	}));
-}
-
-function map(col, f) {
-	return lazy(function() {
-	  var x = col.first();
-		if(x == null) return null;
-		else {
-			return seq(cons(f(x), map(col.rest(), f)));
-		}
-	});
-}
-
-function sum(col) {
-	return seq(col).reduce(function(c,p) {
-	  return c + p;
-	});
-}
-
-function filter(col, f) {
-	return lazy(function() {
-	  var x = col.first();
-		if(x == null) return null;
-		while(!f(x)) {
-			col = col.rest();
-			x = col.first();
-			if(x == null) return null;
-		}
-		return seq(cons(x, filter(col.rest(), f)));
-	});
-}
-
-function flatten(col) {
-	return seq(lazy(function() {
-	  var x = col.first();
-		if(x == null) return null;
-		return seq(x).concat(flatten(col.rest()));
-	}));
-}
-
-function count(col) {
-	var i = 0;
-	seq(col).each(function() {
-	  i++;
-	});
-	return i;
-}
-
-function reverse(col) {
-	return seq(lazy(function() {
-	  var li = seq(col).to_list();
-		return seq.from_list(li.reverse());
-	}));
-}
-
-function order_by(col, index) {
-	return seq(lazy(function() {
-	  var item = col.first();
-		if(item == null) 
-			return null;
-		var smaller = col.rest().where(function(v) {
-		  							  return v[index] <= item[index];
-									});
-		var larger = 	col.rest().where(function(v) {
-									  return v[index] > item[index];
-									});
+		second: function() {
+		  return this.nth(1);
+		},
 		
-		return concat(
-			order_by(smaller, index),
-			cons(item, order_by(larger,index)));
-	}));
-}
-
-function bind(col, f) {
-	return seq(lazy(function() {
-	  var x = col.first();
-		if(x == null)
-			return null;
-		else return f(x).concat(
-						bind(col.rest(), f));		
-	}));
-}
-
-function scan(lis, s, f) {
-	return seq(lazy(function() {
-	  var x = lis.first();
-		if(x == null) 
-			return null;
-		else {
-			var inter = f(s, x);
-			return seq(cons(inter, 
-				scan(lis.rest(), inter , f)));
+		third: function() {
+		  return this.nth(2);
+		},
+		
+		forth: function() {
+		  return this.nth(3);
+		},
+		
+		zip: function(col2) {
+		  var col1 = this;
+			return seq.lazy(function() {
+			  var x = col1.first();
+				var y = col2.first();
+				if(y === null || x === null) {
+					return null;
+				}
+				return seq.cons([x,y], col1.rest().zip(col2.rest()));
+			});
 		}
-	}));
-}
-
-function to_list(col) {
-	var li = [];
-	seq(col).each(function(v) {
-	  li.push(v);
+		
 	});
-	return li;
-}
-
-
-
-
-
+	
+})();
 

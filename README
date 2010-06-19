@@ -2,32 +2,45 @@ A Seq libary for javascript
 
 This libary dosen't use the window object so it can be 
 used in google app's scripting
+and anny other evnierment that dosent depend on the window object
 
-Example:
+this is a general purpose sequnse libary for javascript
+it suportes lazy cached sequnses (dont keep the head)
+and comes with all the seq functions you shuld need.
 
-var list = seq.from_list([1,2,3,4,5])
-	.select(function(v) { return v + 1; })
-	.where(function(v) { return (v % 2) != 0; });
-	
-list.each(function(v) {
-   document.write(v);
-});
+EXAMPLE:
+ var x = seq([1,2,3]);
+ var y = seq([2,3,4]);
+ x.eq(y.select(function(v) { return v - 1; })) -> true
+ 
+ methods:
+  each: takes a function and calles it for every value in the seq
+  select: takes a function and lazyly cales it on all items in seq
+  where: takes a predicate function and lazily filters all items in the seq
+  concatt: takes a second seq and lazily adds adds it to the seq
+  reverse: reverses the seq
+  order_by: takes a index and lazyly orders the seq after that index
+  first: gives you the first item
+  rest: gives you a new seq with all but the first item
+  to_list: returns a new javascript array with all the items in the seq
+  fold: takes a seed and a function and reduces the list
+  reduce: takes a function and reduces the list
+  cons: adds a item to the seq
+  bind: (as in monads)
+  count: counts the number of items in the seq
+  flatten: flattens the seq one step
+  sum: adds all the item in the seq and returns it
+  where_index: like where but indexes the item in the seq to be applied to the predicate
+  eq: compares all the items in a seq to a second seq only uses == (migth be empovered in the future)
+  nth: gives you the nth item in the sequece  
 
-Functions
-
-STATICS
-
-seq.from_list: gives you a seq from a list
-seq.from_hash: 
-	gives you a seq of anny object by enumerating its fields
-	in the structure { key: value: }
-	
-METHODS:
-
-where:
- takes a function as a predicatet and returns a seq with all
- the items filtered by the predicate
-
-select:
- takes a function and applies it to all the items in the
- seq
+ statics:
+  from_list: takes a js arrar and returns seq
+  add_methods: extends the seq object with methods takes a hash from names to functions
+  add_dispatch: add a dispatche item to the seq function
+  cons: cons a item to a seq
+  from_range: takes [end], [start, end] or [start, step, end] and gives you a seq from that range
+  from_hash: takes a object and gives you a seq with the structure { key: value: }
+  from_callback: takes a function wich it calles every time a new item of the seq is requested
+                 the function shuld return null when it has no more items
+  empty: gives you a empty sequence

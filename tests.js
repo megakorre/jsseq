@@ -23,11 +23,30 @@ function assert(msg, cond) {
 }
 
 function run_tests() {
+
+	assert("test from list", function() {
+	  var x = seq.from_list([1,2]);
+	  return x.eq(seq.cons(1,seq.cons(2, seq.empty())));
+	});
 	
+	assert("can each", function() {
+	  var x = seq.from_list([1,2,3,4]);
+		var other = 0;
+		x.each(function(v) {
+		  other += v;
+		});
+		return other == 10;
+	});
+	
+	assert("test can sum seq", function() {
+	  var x = seq.from_list([1,2,3,4]);
+		return x.sum() == 10;
+	});
+
 	assert("test map", function() {
 	  var items = seq.from_list([1,2,3,4])
 			.select(function(v) {
-			  return v + 1;
+				return v + 1;
 			});
 		return items.sum() == 14;
 	});
@@ -51,26 +70,25 @@ function run_tests() {
 	assert("test seq_eq can handle equal seq's", function() {
 	  var l1 = seq.from_list([1,2,3,4]);
 		var l2 = seq.from_list([1,2,3,4]);
-		
-		return seq_eq(l1,l2);
+		return l1.eq(l2);
 	});
 	
 	assert("test seq_eq can handle non equal seq's", function() {
 	  	var l1 = seq.from_list([1,2,3,5]);
 			var l2 = seq.from_list([1,2,3,4]);	
-			return !seq_eq(l1,l2);
+			return !l1.eq(l2);
 	});
 	
 	assert("test seq_eq can handle seq's of diferent length", function() {
 	  var l1 = seq.from_list([1,2,3,5,6,7,8,9]);
 		var l2 = seq.from_list([1,2,3,4]);
-		return !seq_eq(l1,l2);
+		return !l1.eq(l2);
 	});
 	
 	assert("can concatt two seq's", function() {
 	  var l1 = seq.from_list([1,2]);
 		var l2 = seq.from_list([1,2]);
-		return concat(l1, l2).eq(seq.from_list([1,2,1,2]));
+		return l1.concat(l2).eq(seq.from_list([1,2,1,2]));
 	});
 	
 	assert("can convert to list", function() {
@@ -167,6 +185,17 @@ function run_tests() {
 							});
 		return li.eq(seq.from_list([1,3,6,10,15]));
 	});
+	
+	assert("seq function can dispatch on list", function() {
+	  var x = seq([1,2,3,4]);
+		return x.sum() == 10;
+	});
+	
+	assert("can use nth", function() {
+	  var x = seq([1,2,3,4]);
+		return x.nth(2) == 3;
+	});
+	
 	
 	document.write("<h1>Ran Tests</h1>");
 	document.write("<h3>tests runned: "+ tests_runned +"</h3>");
