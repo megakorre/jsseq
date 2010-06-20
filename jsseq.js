@@ -342,20 +342,25 @@ var seq = null;
   seq.lazy = function(f) {
     var start = "___start___";
     var item = start;
+    var cach = null;
     return seq({
       first: function() {
 	if(item == start) {
 	  item = f();
+          if(item === null) { return null; }
+          cach = item.first();
 	}
-	if(item === null) {
-	  return null;
-	}
-	return item.first();
+	return cach;
       },
       rest: function() {
 	if(item == start) {
 	  item = f();
+          if(item === null) { return null; }
+          cach = item.first();
 	}
+        if(item == null) {
+          return seq.empty();
+        }
 	return item.rest();
       }
     });
@@ -409,10 +414,10 @@ var seq = null;
       }
     });
   };
-	
-  /** convinience functions */
-  
+	  
   seq.add_methods({
+    
+    /* returns the nth method in the seq */
     nth: function(n) {
       if(n == 0) return this.first();
       var col = this;
@@ -424,15 +429,17 @@ var seq = null;
       return col.first();
     },
     
+    /* return the secod item in the seq */
     second: function() {
       return this.nth(1);
     },
     
+    /* returns the therd item in the seq */
     third: function() {
       return this.nth(2);
     },
     
-		/* returns the fourth item in the collection */
+    /* returns the fourth item in the collection */
     forth: function() {
       return this.nth(3);
     },
@@ -477,8 +484,20 @@ var seq = null;
 	  num--;
 	}
       });
+    },
+    
+    /**
+      @return true or false depending if the collection starts with
+      the argument 
+     */
+    starts_with: function(col2) {
+      var length = col2.count();
+      if(this.count() < length) {
+        return false;
+      } else {
+        return this.take(length).eq(col2);
+      }
     }
-		
   });
   
 })();

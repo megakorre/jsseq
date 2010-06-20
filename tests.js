@@ -206,7 +206,13 @@ function run_tests() {
     return x.skip(2).eq(seq([3,4]));
   });
   
-  
+  assert("can use starts with", function() {
+    return seq([1,2,3,4,5]).starts_with(seq([1,2,3]));
+  });
+
+}
+
+function test_completed() {
   document.write("<h1>Ran Tests</h1>");
   document.write("<h3>tests runned: "+ tests_runned +"</h3>");
   document.write("<h3>tests passed: "+ tests_passed +"</h3>");
