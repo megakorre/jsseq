@@ -196,6 +196,16 @@ function run_tests() {
 		return x.nth(2) == 3;
 	});
 	
+	assert("can use take", function() {
+	  var x = seq([1,2,3,4,5,6]);
+		return x.take(2).eq(seq([1,2]));
+	});
+	
+	assert("can use skip", function() {
+	  var x = seq([1,2,3,4]);
+		return x.skip(2).eq(seq([3,4]));
+	});
+	
 	
 	document.write("<h1>Ran Tests</h1>");
 	document.write("<h3>tests runned: "+ tests_runned +"</h3>");
