@@ -288,6 +288,7 @@ var seq = null;
     return list_seq(col);
   };
   
+ 
   seq.add_dispatch(Array, function(li) {
     return seq.from_list(li);
   });
@@ -303,7 +304,10 @@ var seq = null;
   };
 	
   /**
-   *
+   * gives you a seq from the range 
+     takes [start,step,end] or
+     [start,end] witch uses 1 as step
+     or [end] witch uses 0 as start
    *****/
   seq.from_range = function(start, step, end) {
     if(step === undefined && end === undefined) {
@@ -324,6 +328,9 @@ var seq = null;
     return seq.from_list(li);
   };
 	
+  /**
+     gives you a hash seq 
+   */
   function hash_seq(hash) {
     var res = [];
     for (i in hash) {
@@ -335,10 +342,17 @@ var seq = null;
     return seq.from_list(res);
   }
   
+  /****
+       returns a seq with the strucure { key: value: } given a hash
+   */
   seq.from_hash = function(hash) {
     return seq(hash_seq(hash));
   };
   
+  /** makes a lazy seq no witch takes a function and runs it first
+  when requested.. it also caches the item so all runs true a seq
+  whill hawe consistent values
+   */
   seq.lazy = function(f) {
     var start = "___start___";
     var item = start;

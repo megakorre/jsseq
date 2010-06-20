@@ -4,9 +4,10 @@ This libary dosen't use the window object so it can be
 used in google app's scripting
 and anny other evnierment that dosent depend on the window object
 
-this is a general purpose sequnse libary for javascript
-it suportes lazy cached sequnses (dont keep the head)
+this is a general purpose sequence libary for javascript
+it suportes lazy cached sequnces (dont keep the head)
 and comes with all the seq functions you shuld need.
+(if it is missing anny you can file it as a bugg :D)
 
 EXAMPLE:
  var x = seq([1,2,3]);
@@ -33,6 +34,10 @@ EXAMPLE:
   where_index: like where but indexes the item in the seq to be applied to the predicate
   eq: compares all the items in a seq to a second seq only uses == (migth be empovered in the future)
   nth: gives you the nth item in the sequece  
+  take: takes a number n and returns you a seq of n items or how manny there is in the seq 
+  skip: skipes n items in the seq
+  starts_with: takes a seq and returns true if the seq starts with the taken seq
+
 
  statics:
   from_list: takes a js arrar and returns seq
@@ -44,3 +49,4 @@ EXAMPLE:
   from_callback: takes a function wich it calles every time a new item of the seq is requested
                  the function shuld return null when it has no more items
   empty: gives you a empty sequence
+
