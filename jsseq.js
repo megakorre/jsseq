@@ -1,9 +1,8 @@
-var seq = null;
-(function() {
+(function(exports) {
   var fns = {};
   var dispatches = {};
   
-  seq = function(item) {
+  exports.seq = function(item) {
     if(item.__seq__) {
       return item;
     }
@@ -20,6 +19,8 @@ var seq = null;
     }
     return res;
   };
+
+  var seq = exports.seq;
   
   seq.each_break = "____each_breake_____";
   
@@ -514,5 +515,5 @@ var seq = null;
     }
   });
   
-})();
+})(typeof exports === "undefined" ? window : exports);
 
